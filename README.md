@@ -2,18 +2,24 @@
 
 Repositório para a Unidade Curricular de **Aprendizagem por Reforço** (MIA).
 
-Este repositório é constituído por 9 pastas, sendo que cada pasta é responsável pela resolução de uma aula prática da Unidade Curricular.
+O conteúdo resolvido foi consolidado numa única pasta [mia_rl/](./mia_rl/).
 
 ## Estrutura
 
-| Pasta | Descrição |
-|-------|-----------|
-| [TP1](./TP1/) | Aula Prática 1 |
-| [TP2](./TP2/) | Aula Prática 2 |
-| [TP3](./TP3/) | Aula Prática 3 |
-| [TP4](./TP4/) | Aula Prática 4 |
-| [TP5](./TP5/) | Aula Prática 5 |
-| [TP6](./TP6/) | Aula Prática 6 |
-| [TP7](./TP7/) | Aula Prática 7 |
-| [TP8](./TP8/) | Aula Prática 8 |
-| [TP9](./TP9/) | Aula Prática 9 |
+Os exercícios resolvidos e o código reutilizável ficaram consolidados em [mia_rl/](./mia_rl/).
+
+Estrutura principal:
+
+- `core/` — abstrações genéricas como `Environment`, `Agent` e `Policy`
+- `envs/` — ambientes como Blackjack, Windy Gridworld e Tic-Tac-Toe
+- `mdps/` — abstrações de MDP para programação dinâmica
+- `agents/` — algoritmos de RL, incluindo prediction, control, planning e policy gradient
+- `features/` — representações de estado e feature engineering
+- `policies/` — políticas reutilizáveis
+- `experiments/` — loops de treino, avaliação e comparação
+- `notebooks/` — notebooks consolidados das práticas
+- `scripts/` — scripts executáveis dos experimentos
+- `plots/` — helpers de visualização
+- `outputs/` — resultados e gráficos gerados
+
+O exercício de k-armed bandits também ficou incluído em [mia_rl/scripts/kbandits_incomplete.py](./mia_rl/scripts/kbandits_incomplete.py).
