@@ -46,10 +46,10 @@ class BanditAgent:
         self.t = 0
 
     def select_action(self):
-        raise NotImplementedError
+        pass
 
     def update(self, action, reward):
-        raise NotImplementedError
+        pass
 
 
 # ============================================================
@@ -69,8 +69,9 @@ class EpsilonGreedy(BanditAgent):
         self.Q[:] = self.optimistic
 
     def select_action(self):
-        # complete here
-        return None
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(self.k)
+        return np.argmax(self.Q)
         
     def update(self, action, reward):
         self.t += 1
