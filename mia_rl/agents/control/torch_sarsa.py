@@ -120,7 +120,15 @@ class TorchSarsaControl(ControlAgent[StateT, ActionT]):
             # 6. Call loss.backward() to populate model.weight.grad via autograd.
             # 7. Call self.optimizer.step() to apply the weight update.
             # 8. Compute delta = abs(target - pred.item()) and append to self._td_errors.
-            raise NotImplementedError("TODO: implement the optimizer-based semi-gradient update.")
+            phi = self._to_tensor(transition.state, transition.action)
+            self.optimizer.zero_grad()
+            pred = self.model(phi)
+            target_tensor = torch.tensor([target], dtype=torch.float32)
+            loss = 0.5 * F.mse_loss(pred, target_tensor)
+            loss.backward()
+            self.optimizer.step()
+            delta = abs(target - pred.item())
+            self._td_errors.append(delta)
         else:
             phi = self._to_tensor(transition.state, transition.action)
             with torch.no_grad():

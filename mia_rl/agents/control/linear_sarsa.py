@@ -68,7 +68,15 @@ class LinearSarsaControl(ControlAgent[StateT, ActionT]):
         4. Apply the semi-gradient weight update: self.w += self.alpha * delta * phi.
         5. Record abs(delta) in self._td_errors.
         """
-        raise NotImplementedError("TODO: implement the semi-gradient SARSA weight update.")
+        phi = self.phi(transition.state, transition.action)
+        if not transition.done and transition.next_state is not None:
+            next_action = self._selected_actions[transition.next_state]
+            bootstrap = self.action_value_of(transition.next_state, next_action)
+        else:
+            bootstrap = 0.0
+        td_error = transition.reward + self.gamma * bootstrap - float(self.w @ phi)
+        self.w += self.alpha * td_error * phi
+        self._td_errors.append(abs(td_error))
 
     def action_value_of(self, state: StateT, action: ActionT) -> float:
         return float(self.w @ self.phi(state, action))
