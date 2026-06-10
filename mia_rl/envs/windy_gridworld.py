@@ -54,12 +54,20 @@ class WindyGridworldEnv(Environment[WindyGridworldState, WindyGridworldAction]):
             raise ValueError(f"Invalid action: {action}")
 
         row, col = state
+        # 1. Obter o deslocamento básico (delta_row, delta_col) associado à ação.
         delta_row, delta_col = ACTION_TO_DELTA[action]
+        
+        # 2. Ler a força do vento na coluna atual do agente.
         wind_strength = self.wind[col]
 
+        # 3. Aplicar a transição com restrição aos limites (clamping).
+        # Como a linha 0 representa o topo da grelha, empurrar o agente para cima (vento vertical)
+        # equivale a subtrair a força do vento da coordenada de linha.
         next_row = min(max(row + delta_row - wind_strength, 0), self.rows - 1)
         next_col = min(max(col + delta_col, 0), self.cols - 1)
         next_state = (next_row, next_col)
+        
+        # 4. Verificar se o novo estado corresponde ao objetivo (goal).
         done = next_state == self.goal
         return next_state, self.reward_per_step, done
 

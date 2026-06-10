@@ -120,13 +120,33 @@ class TorchSarsaControl(ControlAgent[StateT, ActionT]):
             # 6. Call loss.backward() to populate model.weight.grad via autograd.
             # 7. Call self.optimizer.step() to apply the weight update.
             # 8. Compute delta = abs(target - pred.item()) and append to self._td_errors.
+            
+            # 1. Extração do vetor de características phi(s, a) como um tensor PyTorch.
             phi = self._to_tensor(transition.state, transition.action)
+            
+            # 2. Limpar os gradientes acumulados do passo anterior para evitar acumulação indesejada.
             self.optimizer.zero_grad()
+            
+            # 3. Passagem para a frente (Forward pass): pred = w^T phi(s, a).
             pred = self.model(phi)
+            
+            # 4. Criação do tensor alvo de tipo float32. Importante: ao criar um novo tensor a partir de 
+            # um float Python (target), este tensor fica desassociado do grafo de computação. 
+            # Isso garante que não flua gradiente através do bootstrap, caracterizando o método de "semi-gradiente".
             target_tensor = torch.tensor([target], dtype=torch.float32)
+            
+            # 5. Cálculo da perda MSE escalada por 0.5. A perda L(w) = 1/2 * (q(s,a;w) - U_t)^2 garante que
+            # a derivada em ordem a w seja dL/dw = (q(s,a;w) - U_t) * phi. Na regra do SGD (w <- w - alpha * dL/dw),
+            # isto resulta em w <- w + alpha * delta * phi (onde delta = U_t - q), igualando a atualização clássica.
             loss = 0.5 * F.mse_loss(pred, target_tensor)
+            
+            # 6. Retropropagação para calcular os gradientes parciais e populá-los em model.weight.grad.
             loss.backward()
+            
+            # 7. Atualização do vetor de pesos w através do otimizador SGD.
             self.optimizer.step()
+            
+            # 8. Guardar o erro absoluto de diferença temporal (Erro TD).
             delta = abs(target - pred.item())
             self._td_errors.append(delta)
         else:

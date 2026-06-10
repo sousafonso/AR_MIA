@@ -28,12 +28,20 @@ def encode_state(board: TicTacToeState, current_player: int) -> np.ndarray:
     Returns:
         np.ndarray of shape (27,), dtype float32.
     """
+    # Inicializa o vetor de características com 27 dimensões (9 células x 3 slots por célula).
     phi = np.zeros(STATE_FEATURE_DIM, dtype=np.float32)
+    
+    # Mapeia cada célula com base na perspetiva do jogador atual.
+    # Ao codificar os estados de forma relativa, permitimos que ambos os lados (X e O)
+    # partilhem o mesmo conjunto de pesos da política (self-play), duplicando a eficiência de dados.
     for i, cell in enumerate(board):
         if cell == current_player:
+            # A minha peça: guardada no primeiro slot da célula i (i * 3 + 0)
             phi[i * 3 + 0] = 1.0   # my piece
         elif cell == -current_player:
+            # A peça do oponente: guardada no segundo slot da célula i (i * 3 + 1)
             phi[i * 3 + 1] = 1.0   # opponent's piece
         else:
+            # Célula vazia: guardada no terceiro slot da célula i (i * 3 + 2)
             phi[i * 3 + 2] = 1.0   # empty
     return phi

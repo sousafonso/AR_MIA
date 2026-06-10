@@ -62,7 +62,9 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
         2. Set `self.current_player` to 1 (player X).
         3. Return the initial board state.
         """
+        # Inicializa o tabuleiro como um tuplo imutável de 9 elementos a zero (células vazias)
         self.board = (0,) * 9
+        # Define o jogador X (+1) como o jogador inicial
         self.current_player = 1
         return self.board
 
@@ -72,7 +74,8 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
         TODO:
         1. Return a list of all cell indices i where state[i] == 0.
         """
-        return [index for index, cell in enumerate(state) if cell == 0]
+        # Filtra os índices das células vazias (onde o valor do estado é 0)
+        return [index for index, cell in enumerate(state) if cell == 0] 
 
     def is_terminal(self, state: TicTacToeState) -> bool:
         """Return True if the game is over (win or draw).
@@ -81,6 +84,7 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
         1. Use `_winner(state)` to check if any player has won.
         2. Also return True if there are no empty cells left (draw).
         """
+        # O jogo termina se houver um vencedor ou se o tabuleiro estiver cheio (sem células vazias)
         return _winner(state) != 0 or all(cell != 0 for cell in state)
 
     def step(self, action: TicTacToeAction) -> tuple[TicTacToeState, float, bool]:
@@ -94,25 +98,33 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
         3. Check for a winner using `_winner`.
         4. Determine whether the episode is done:
            - done = True if there is a winner OR no empty cells remain.
-        5. Compute the reward for the player who just moved:
+         5. Compute the reward for the player who just moved:
            - +1 if that player won, 0 otherwise.
         6. Switch `self.current_player` to the other player (-1 ↔ +1).
         7. Update `self.board` to the new board.
         8. Return `(new_board, reward, done)`.
         """
+        # Validação dos limites do tabuleiro
         if action < 0 or action >= len(self.board):
             raise ValueError(f"Invalid action: {action}")
+        # Validação para assegurar que a célula escolhida está vazia
         if self.board[action] != 0:
             raise ValueError(f"Cell {action} is already occupied.")
 
+        # Converte para lista para poder modificar a célula da ação selecionada
         board_list = list(self.board)
         board_list[action] = self.current_player
+        # Cria um novo tuplo imutável com o tabuleiro resultante
         new_board = tuple(board_list)
 
+        # Identifica se a jogada resultou num vencedor
         winner = _winner(new_board)
+        # O jogo termina se houver um vencedor ou empate (tabuleiro sem células a zero)
         done = winner != 0 or all(cell != 0 for cell in new_board)
+        # A recompensa é de +1.0 para o jogador ativo caso tenha vencido
         reward = 1.0 if winner == self.current_player else 0.0
 
+        # Atualiza o estado do ambiente e inverte o jogador ativo multiplicando por -1
         self.board = new_board
         self.current_player *= -1
         return new_board, reward, done
@@ -134,15 +146,18 @@ class TicTacToeEnv(Environment[TicTacToeState, TicTacToeAction]):
                ---+---+---
                 7 | 8 | 9
         """
+        # Utiliza o estado atual do tabuleiro caso nenhum estado externo seja passado
         board = self.board if state is None else state
         symbols = {1: "X", -1: "O", 0: None}
 
+        # Representação de célula vazia numerada de 1 a 9 para guiar o jogador humano
         def cell_repr(index: int) -> str:
             cell = board[index]
             if cell == 0:
                 return str(index + 1)
             return symbols[cell]
 
+        # Desenha a grelha formatada de 3x3 no stdout
         for row in range(3):
             start = row * 3
             print(" | ".join(cell_repr(start + col) for col in range(3)))

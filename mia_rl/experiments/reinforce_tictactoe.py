@@ -76,17 +76,23 @@ def run_reinforce_episode(
         else:
             traj_o.append(step)
 
-        # Inject −1 into the loser's last trajectory step when the game ends
-        if done and reward == 1.0:  # someone just won
-            loser_traj = traj_o if player == 1 else traj_x  # the other player lost
+        # Quando o jogo termina com vitória (done=True e reward=1.0), sabemos que o jogador ativo ganhou.
+        # Numa dinâmica de soma zero, isto implica que o outro jogador perdeu. O ambiente só emite
+        # recompensa para a jogada vitoriosa final (r=+1.0). A última jogada do derrotado tinha sido
+        # registada com r=0.0. Injetamos r=-1.0 na última transição do derrotado para ensinar o agente a evitá-la.
+        if done and reward == 1.0:  # alguém acabou de ganhar
+            # Se player == 1 (X) ganhou, o derrotado foi O (traj_o). Caso contrário, foi X (traj_x).
+            loser_traj = traj_o if player == 1 else traj_x
             if loser_traj:
                 last = loser_traj[-1]
+                # Como os tuplos em Python são imutáveis, reconstruímos o último passo
+                # substituindo o quarto elemento (recompensa) de 0.0 para -1.0.
                 loser_traj[-1] = (
                     last[0],
                     last[1],
                     last[2],
                     -1.0,
-                )  # overwrite r=0 → r=-1
+                )  # substitui r=0 por r=-1
 
         state = next_state
 

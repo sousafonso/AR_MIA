@@ -69,17 +69,25 @@ class EpsilonGreedy(BanditAgent):
         self.Q[:] = self.optimistic
 
     def select_action(self):
+        # 1. Com probabilidade epsilon, escolhe braço aleatório da distribuição uniforme (exploração).
         if np.random.rand() < self.epsilon:
             return np.random.randint(self.k)
+        # 2. Com probabilidade 1-epsilon, seleciona o melhor braço estimado (aproveitamento).
         return np.argmax(self.Q)
         
     def update(self, action, reward):
+        # Incrementar contador temporal total t e contador de visitas do braço selecionado N(a).
         self.t += 1
         self.N[action] += 1
 
+        # Atualização incremental do valor estimado Q(a):
         if self.alpha is not None:
+            # Caso não-estacionário: usa learning rate constante alpha.
+            # Q_(t+1)(a) <- Q_t(a) + alpha * [R_t - Q_t(a)]
             self.Q[action] += self.alpha * (reward - self.Q[action])
         else:
+            # Caso estacionário: usa média amostral real (taxa 1/N(a) decrescente).
+            # Q_(t+1)(a) <- Q_t(a) + 1/N(a) * [R_t - Q_t(a)]
             self.Q[action] += (reward - self.Q[action]) / self.N[action]
 
 # ============================================================
@@ -92,13 +100,17 @@ class UCB(BanditAgent):
         self.c = c
 
     def select_action(self):
+        # Incrementar contador de passos t.
         self.t += 1
 
-        # ensure each action tried once
+        # 1. Garantir que cada braço é testado pelo menos uma vez no início (para evitar divisão por zero).
         for a in range(self.k):
             if self.N[a] == 0:
                 return a
 
+        # 2. Critério UCB1: seleciona a ação que maximiza o limite superior de confiança.
+        # O termo de raiz cresce logaritmicamente com o tempo total (t) incentivando a exploração,
+        # e diminui à medida que o braço é visitado (N_t(a)), controlando a incerteza do valor estimado.
         ucb_values = self.Q + self.c * np.sqrt(np.log(self.t) / self.N)
         return np.argmax(ucb_values)
 
@@ -128,6 +140,7 @@ class GradientBandit(BanditAgent):
         return exp / np.sum(exp)
 
     def select_action(self):
+        # Amostra ação proporcionalmente às probabilidades da política Softmax.
         probs = self._policy()
         return np.random.choice(self.k, p=probs)
 
@@ -135,16 +148,21 @@ class GradientBandit(BanditAgent):
         self.t += 1
         probs = self._policy()
 
+        # 1. Atualização e uso do Baseline: se ativado, atualiza a média geral incremental das recompensas.
+        # R_bar_t <- R_bar_t-1 + 1/t * [R_t - R_bar_t-1]. Serve para reduzir a variância do gradiente.
         if self.baseline:
             self.avg_reward += (reward - self.avg_reward) / self.t
             baseline = self.avg_reward
         else:
             baseline = 0
 
+        # 2. Atualização das preferências H(a) usando subida de gradiente stocástica (SGD):
         for a in range(self.k):
             if a == action:
+                # Ação selecionada (A_t): H_(t+1)(A_t) <- H_t(A_t) + alpha * (R_t - R_bar_t) * (1 - pi_t(A_t))
                 self.H[a] += self.alpha * (reward - baseline) * (1 - probs[a])
             else:
+                # Ações não selecionadas (a != A_t): H_(t+1)(a) <- H_t(a) - alpha * (R_t - R_bar_t) * pi_t(a)
                 self.H[a] -= self.alpha * (reward - baseline) * probs[a]
 
 

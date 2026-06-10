@@ -78,10 +78,17 @@ class BlackjackEnv(Environment[BlackjackState, BlackjackAction]):
             raise ValueError(f"Invalid action: {action}")
 
         if action == "hit":
+            # 1. Comprar uma nova carta do baralho DECK e adicioná-la à mão do jogador.
             self.player.append(draw_card(self.rng))
+            
+            # 2. Recalcular o estado resultante S = (soma_jogador, carta_visivel_dealer, tem_as_utilizavel).
             next_state = self._state()
+            
+            # 3. Se a soma do jogador exceder 21 (bust), o episódio termina (done=True) com penalização (reward=-1.0).
             if is_bust(self.player):
                 return next_state, -1.0, True
+                
+            # 4. Caso contrário, o jogo continua (done=False) com recompensa imediata neutra (reward=0.0).
             return next_state, 0.0, False
 
         while sum_hand(self.dealer) < 17:

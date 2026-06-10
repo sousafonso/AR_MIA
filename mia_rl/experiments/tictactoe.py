@@ -30,7 +30,10 @@ def play_game(
     while not env.is_terminal(state):
         player_label = "X" if env.current_player == 1 else "O"
 
+        # Selecionar dinamicamente a política correta com base no turno do jogador ativo.
+        # Se for a vez do jogador X (+1), usa policy_x; se for o jogador O (-1), usa policy_o.
         policy = policy_x if env.current_player == 1 else policy_o
+        # Obter a ação a ser executada a partir da política selecionada.
         action = policy(env, state)
 
         state, reward, done = env.step(action)

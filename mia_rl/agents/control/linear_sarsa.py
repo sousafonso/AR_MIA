@@ -68,14 +68,27 @@ class LinearSarsaControl(ControlAgent[StateT, ActionT]):
         4. Apply the semi-gradient weight update: self.w += self.alpha * delta * phi.
         5. Record abs(delta) in self._td_errors.
         """
+        # 1. Obter o vetor de características phi(s, a) correspondente ao par estado-ação.
         phi = self.phi(transition.state, transition.action)
+        
+        # 2. Se a transição não for terminal (done=False) e houver um estado seguinte válido,
+        # fazemos o bootstrap do valor do próximo estado-ação usando a ação cached de s_t+1.
+        # Caso contrário, o bootstrap é 0.0.
         if not transition.done and transition.next_state is not None:
             next_action = self._selected_actions[transition.next_state]
             bootstrap = self.action_value_of(transition.next_state, next_action)
         else:
             bootstrap = 0.0
+            
+        # 3. Calcular o erro de diferença temporal (Erro TD analítico):
+        # delta = R_(t+1) + gamma * w^T * phi(s_next, a_next) - w^T * phi(s, a)
         td_error = transition.reward + self.gamma * bootstrap - float(self.w @ phi)
+        
+        # 4. Aplicação da atualização semi-gradiente manual sobre o vetor de pesos:
+        # w <- w + alpha * delta * phi
         self.w += self.alpha * td_error * phi
+        
+        # 5. Registar o erro absoluto no histórico.
         self._td_errors.append(abs(td_error))
 
     def action_value_of(self, state: StateT, action: ActionT) -> float:

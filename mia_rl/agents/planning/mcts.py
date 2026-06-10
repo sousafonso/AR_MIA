@@ -113,8 +113,13 @@ class MCTSNode:
         ``value`` is from **this node's player's** perspective.
         Each level up switches player, so we negate the value at every step.
         """
+        # 1. Incrementar a contagem de visitas.
         self.visit_count += 1
+        # 2. Acumular o valor da simulação na soma cumulativa.
         self.value_sum += value
+        # 3. Propagação recursiva: se houver um nó pai, envia o valor com sinal invertido (-value).
+        # Como o Tic-Tac-Toe é um jogo de soma zero, um resultado positivo para o jogador atual 
+        # é equivalente a um resultado negativo para o oponente no nó pai.
         if self.parent is not None:
             self.parent.backpropagate(-value)
 
@@ -209,15 +214,20 @@ class MCTSAgent:
 
         Uses pure-function helpers so the environment object is never mutated.
         """
+        # A simulação corre a partir do jogador atual.
         current = player
+        # 1. Correr o rollout selecionando ações uniforme-aleatórias até atingir um estado terminal.
+        # As funções auxiliares puras (_is_terminal, _available, _apply) são usadas para não mutar
+        # o estado ou tabuleiro do jogo no ambiente real da partida.
         while not _is_terminal(state):
             action = random.choice(_available(state))
             state = _apply(state, action, current)
             current = -current
 
+        # 2. Avaliar o resultado do jogo a partir da perspetiva de "player" (quem iniciou o rollout).
         winner = _winner(state)
         if winner == player:
-            return 1.0
+            return 1.0   # vitória: retorna +1.0
         if winner == 0:
-            return 0.0
-        return -1.0
+            return 0.0   # empate: retorna 0.0
+        return -1.0      # derrota: retorna -1.0

@@ -76,12 +76,18 @@ class ReinforceAgent:
             1-D array of length ``len(available)`` that sums to 1.
 
         """
+        # 1. Calcular as preferências lineares (logits) para as ações disponíveis: h(s, a) = theta_a^T * phi(s).
         logits = (
             self.theta[available] @ phi
         )  # h(s,a) = θ[a]·φ(s) for each available action; shape (|available|,)
+        
+        # 2. Estabilidade Numérica: Subtrair o máximo para evitar estouro de capacidade (overflow) de exp().
+        # Isto garante que os expoentes sejam <= 0, mantendo os valores de exp() no intervalo (0, 1].
         logits = (
             logits - logits.max()
         )  # subtract max for numerical stability (prevents exp overflow)
+        
+        # 3. Softmax normalizada: retorna a distribuição de probabilidade apenas sobre ações legais.
         exp_l = np.exp(logits)
         return exp_l / exp_l.sum()  # normalise → probabilities sum to 1
 
@@ -143,13 +149,23 @@ class ReinforceAgent:
             action_idx = available.index(action)
             total_loss -= returns[t] * np.log(probs[action_idx] + 1e-8)
 
+            # Escala da taxa de aprendizagem ponderada pelo fator de desconto temporal e o retorno G_t:
+            # scale = alpha * gamma^t * G_t
             scale = self.alpha * (self.gamma**t) * returns[t]
+            
+            # Atualização dos parâmetros da política baseada no Score Function Gradient:
+            # theta_a <- theta_a + alpha * gamma^t * G_t * Grad_(theta_a) log pi(a_t | s_t)
+            # onde Grad_(theta_a) log pi(a_t | s_t) = phi(s_t) * (I(a == a_t) - pi(a | s_t))
             for i, a in enumerate(available):
                 if a == action:
+                    # Caso 1: Ação Escolhida (a == a_t). Gradiente = phi * (1 - pi(a_t | s_t))
+                    # Aumentamos a preferência da ação tomada proporcionalmente ao retorno e à surpresa.
                     self.theta[a] += (
                         scale * phi * (1.0 - probs[action_idx])
                     )  # chosen: +φ·(1−π)
                 else:
+                    # Caso 2: Ação Não Escolhida (a != a_t). Gradiente = -phi * pi(a | s_t)
+                    # Diminuímos a preferência de ações alternativas para manter a soma das probabilidades a 1.
                     self.theta[a] -= scale * phi * probs[i]  # others:  -φ·π
 
             if self.entropy_beta > 0.0:
